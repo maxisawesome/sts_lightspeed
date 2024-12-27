@@ -238,7 +238,7 @@ void ConsoleSimulator::printActions(std::ostream &os) const {
         default:
             os << "Invalid action state" << '\n';
     }
-
+    os << "END!\n";
     os.flush();
 }
 
@@ -366,6 +366,8 @@ void ConsoleSimulator::printShopRoomActions(std::ostream &os) const {
         auto price = s.cardPrice(i);
         if (price != -1 && gc->gold >= price) {
             os << "card " << i << ":  " << s.cards[i] << " " << price << "g\n";
+        } else {
+            os << "card " << i << ":  " << s.cards[i] << " " << price << "g (u can't afford this) \n";
         }
     }
 
@@ -373,6 +375,8 @@ void ConsoleSimulator::printShopRoomActions(std::ostream &os) const {
         auto price = s.relicPrice(i);
         if (price != -1 && gc->gold >= price) {
             os << "relic " << i << ":  " << getRelicName(s.relics[i]) << " " << price << "g\n";
+        } else {
+            os << "relic " << i << ":  " << getRelicName(s.relics[i]) << " " << price << "g (u can't afford this) \n";
         }
     }
 
@@ -380,11 +384,16 @@ void ConsoleSimulator::printShopRoomActions(std::ostream &os) const {
         auto price = s.potionPrice(i);
         if (price != -1 && gc->gold >= price) {
             os << "potion " << i << ": " << getPotionName(s.potions[i]) << " " << price << "g\n";
+        } else {
+            os << "potion " << i << ": " << getPotionName(s.potions[i]) << " " << price << "g (u can't afford this) \n";
         }
     }
 
     if (s.removeCost != -1 && gc->gold >= s.removeCost) {
         os << "remove: Remove Card " << s.removeCost<< "g\n";
+    } else {
+        os << "remove: Remove Card " << s.removeCost<< "g (u can't afford this) \n";
+
     }
 
     os << "proceed:\n";
@@ -451,6 +460,7 @@ void ConsoleSimulator::printMapScreenActions(std::ostream &os) const {
             os << nextNode.x << ": " << roomStrings[static_cast<int>(nextNode.room)] << '\n';
         }
     }
+    // os << "END!\n";
 }
 
 void ConsoleSimulator::takeMapScreenAction(const std::string &action) {
@@ -504,6 +514,7 @@ void ConsoleSimulator::printRewardsScreenActions(std::ostream &os) const {
     } else {
         os << "proceed:\n";
     }
+    // os << "END!\n";
 
 }
 
@@ -1109,6 +1120,7 @@ void ConsoleSimulator::printEventActions(std::ostream &os) const {
         default:
             break;
     }
+//    os << "END!\n"; 
 }
 
 void ConsoleSimulator::takeEventAction(const std::string &action) {

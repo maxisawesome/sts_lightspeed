@@ -11,6 +11,7 @@
 #include <bitset>
 #include <thread>
 #include <mutex>
+#include <unordered_map>
 
 using namespace sts;
 

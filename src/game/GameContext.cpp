@@ -2226,6 +2226,7 @@ void GameContext::discardPotionAtIdx(int idx) {
 }
 
 void GameContext::chooseNeowOption(const Neow::Option &o) {
+    // std::cout << "debugging: " << o.d << " " << o.r << std::endl;
 
     switch (o.d) {
         case Neow::Drawback::TEN_PERCENT_HP_LOSS:
@@ -2431,6 +2432,7 @@ void GameContext::chooseEventOption(int idx) {
 //        gs.regainControlAction = nullptr;
 //    };
     const bool unfavorable = ascension >= 15;
+    std::cout << "Got event option " << idx << std::endl;
 
     switch (curEvent) {
         case Event::NEOW:

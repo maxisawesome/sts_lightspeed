@@ -53,8 +53,13 @@ void ConsoleSimulator::reset() {
 }
 
 void ConsoleSimulator::play(std::istream &is, std::ostream &os, SimulatorContext &c) {
+    std::cout << "we're playing\n";
+
+                // << ", character: " << character
+                // << ", ascension level: " << ascensionLevel << std::endl;
     if (gc == nullptr) {
         ++c.line;
+        std::cout << "in gc == nullptr\n";
         std::string seedStr;
         std::string character;
         int ascensionLevel;
@@ -63,6 +68,9 @@ void ConsoleSimulator::play(std::istream &is, std::ostream &os, SimulatorContext
         is >> character;
         is >> ascensionLevel;
 
+
+        std::cout << "printing data ig?\n";
+        std::cout << seedStr << " " << character << " " << ascensionLevel << "\n";
         if (c.printInput) {
             std::cout << seedStr << " " << character << " " << ascensionLevel << "\n";
         }

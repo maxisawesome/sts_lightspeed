@@ -75,6 +75,24 @@ PYBIND11_MODULE(slaythespire, m) {
             return oss.str();
         }, "returns a string representation of the GameContext");
 
+    // Add methods to handle events
+    gameContext.def("choose_event_option", &GameContext::chooseEventOption, "Choose an option in the current event");
+    // .def("get_event_options", [](const GameContext &gc) { 
+    //     // You'd need to implement this to return available event options
+    //     return gc.getEventOptions(); 
+    // });
+    // Add methods to get current state info
+    // .def("get_current_event", &GameContext::getCurrentEvent)
+    // .def("get_available_actions", [](const GameContext &gc) {
+    //     // Return list of valid actions in current state
+    //     return gc.getAvailableActions();
+    // })
+    // // Add method to step the game forward with an action
+    // .def("take_action", [](GameContext &gc, Action action) {
+    //     // Execute the given action and advance game state
+    //     gc.takeAction(action);
+    // });
+
     gameContext.def_readwrite("outcome", &GameContext::outcome)
         .def_readwrite("act", &GameContext::act)
         .def_readwrite("floor_num", &GameContext::floorNum)
@@ -84,7 +102,7 @@ PYBIND11_MODULE(slaythespire, m) {
         .def_readwrite("cur_map_node_x", &GameContext::curMapNodeX)
         .def_readwrite("cur_map_node_y", &GameContext::curMapNodeY)
         .def_readwrite("cur_room", &GameContext::curRoom)
-//        .def_readwrite("cur_event", &GameContext::curEvent) // todo standardize event names
+        .def_readwrite("cur_event", &GameContext::curEvent) // todo standardize event names - Max: I didn't do that lol?
         .def_readwrite("boss", &GameContext::boss)
 
         .def_readwrite("cur_hp", &GameContext::curHp)
@@ -644,6 +662,67 @@ PYBIND11_MODULE(slaythespire, m) {
         .value("MASKED_BANDITS_EVENT", ME::MASKED_BANDITS_EVENT)
         .value("MUSHROOMS_EVENT", ME::MUSHROOMS_EVENT)
         .value("MYSTERIOUS_SPHERE_EVENT", ME::MYSTERIOUS_SPHERE_EVENT);
+
+    // In the PYBIND11 bindings section
+    pybind11::enum_<sts::Event>(m, "Event")
+        .value("INVALID", sts::Event::INVALID)
+        .value("MONSTER", sts::Event::MONSTER)
+        .value("REST", sts::Event::REST)
+        .value("SHOP", sts::Event::SHOP)
+        .value("TREASURE", sts::Event::TREASURE)
+        .value("NEOW", sts::Event::NEOW)
+        .value("OMINOUS_FORGE", sts::Event::OMINOUS_FORGE)
+        .value("PLEADING_VAGRANT", sts::Event::PLEADING_VAGRANT)
+        .value("ANCIENT_WRITING", sts::Event::ANCIENT_WRITING)
+        .value("OLD_BEGGAR", sts::Event::OLD_BEGGAR)
+        .value("BIG_FISH", sts::Event::BIG_FISH)
+        .value("BONFIRE_SPIRITS", sts::Event::BONFIRE_SPIRITS)
+        .value("COLOSSEUM", sts::Event::COLOSSEUM)
+        .value("CURSED_TOME", sts::Event::CURSED_TOME)
+        .value("DEAD_ADVENTURER", sts::Event::DEAD_ADVENTURER)
+        .value("DESIGNER_IN_SPIRE", sts::Event::DESIGNER_IN_SPIRE)
+        .value("AUGMENTER", sts::Event::AUGMENTER)
+        .value("DUPLICATOR", sts::Event::DUPLICATOR)
+        .value("FACE_TRADER", sts::Event::FACE_TRADER)
+        .value("FALLING", sts::Event::FALLING)
+        .value("FORGOTTEN_ALTAR", sts::Event::FORGOTTEN_ALTAR)
+        .value("THE_DIVINE_FOUNTAIN", sts::Event::THE_DIVINE_FOUNTAIN)
+        .value("GHOSTS", sts::Event::GHOSTS)
+        .value("GOLDEN_IDOL", sts::Event::GOLDEN_IDOL)
+        .value("GOLDEN_SHRINE", sts::Event::GOLDEN_SHRINE)
+        .value("WING_STATUE", sts::Event::WING_STATUE)
+        .value("KNOWING_SKULL", sts::Event::KNOWING_SKULL)
+        .value("LAB", sts::Event::LAB)
+        .value("THE_SSSSSERPENT", sts::Event::THE_SSSSSERPENT)
+        .value("LIVING_WALL", sts::Event::LIVING_WALL)
+        .value("MASKED_BANDITS", sts::Event::MASKED_BANDITS)
+        .value("MATCH_AND_KEEP", sts::Event::MATCH_AND_KEEP)
+        .value("MINDBLOOM", sts::Event::MINDBLOOM)
+        .value("HYPNOTIZING_COLORED_MUSHROOMS", sts::Event::HYPNOTIZING_COLORED_MUSHROOMS)
+        .value("MYSTERIOUS_SPHERE", sts::Event::MYSTERIOUS_SPHERE)
+        .value("THE_NEST", sts::Event::THE_NEST)
+        .value("NLOTH", sts::Event::NLOTH)
+        .value("NOTE_FOR_YOURSELF", sts::Event::NOTE_FOR_YOURSELF)
+        .value("PURIFIER", sts::Event::PURIFIER)
+        .value("SCRAP_OOZE", sts::Event::SCRAP_OOZE)
+        .value("SECRET_PORTAL", sts::Event::SECRET_PORTAL)
+        .value("SENSORY_STONE", sts::Event::SENSORY_STONE)
+        .value("SHINING_LIGHT", sts::Event::SHINING_LIGHT)
+        .value("THE_CLERIC", sts::Event::THE_CLERIC)
+        .value("THE_JOUST", sts::Event::THE_JOUST)
+        .value("THE_LIBRARY", sts::Event::THE_LIBRARY)
+        .value("THE_MAUSOLEUM", sts::Event::THE_MAUSOLEUM)
+        .value("THE_MOAI_HEAD", sts::Event::THE_MOAI_HEAD)
+        .value("THE_WOMAN_IN_BLUE", sts::Event::THE_WOMAN_IN_BLUE)
+        .value("TOMB_OF_LORD_RED_MASK", sts::Event::TOMB_OF_LORD_RED_MASK)
+        .value("TRANSMORGRIFIER", sts::Event::TRANSMORGRIFIER)
+        .value("UPGRADE_SHRINE", sts::Event::UPGRADE_SHRINE)
+        .value("VAMPIRES", sts::Event::VAMPIRES)
+        .value("WE_MEET_AGAIN", sts::Event::WE_MEET_AGAIN)
+        .value("WHEEL_OF_CHANGE", sts::Event::WHEEL_OF_CHANGE)
+        .value("WINDING_HALLS", sts::Event::WINDING_HALLS)
+        .value("WORLD_OF_GOOP", sts::Event::WORLD_OF_GOOP);
+
 
     pybind11::enum_<RelicId> relicEnum(m, "RelicId");
     relicEnum.value("AKABEKO", RelicId::AKABEKO)

@@ -10,11 +10,12 @@
 #include <array>
 
 #include "constants/Rooms.h"
+#include "game/Neow.h"
 
 namespace sts {
 
     struct NNInterface {
-        static constexpr int observation_space_size = 412;
+        static constexpr int observation_space_size = 550; // 412 + 58 (events) + 80 (generic choices: 4 choices × 20 features)
         static constexpr int playerHpMax = 200;
         static constexpr int playerGoldMax = 1800;
         static constexpr int cardCountMax = 7;
@@ -27,6 +28,7 @@ namespace sts {
         NNInterface();
 
         int getCardIdx(Card c) const;
+        std::array<int, 20> convertNeowOptionToGenericChoice(const Neow::Option& option) const;
         std::array<int,observation_space_size> getObservationMaximums() const;
         std::array<int,observation_space_size> getObservation(const GameContext &gc) const;
 

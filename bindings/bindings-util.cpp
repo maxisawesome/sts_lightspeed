@@ -10,6 +10,8 @@
 #include "sim/PrintHelpers.h"
 #include "game/Game.h"
 #include "game/Map.h"
+#include "game/Neow.h"
+#include "game/GameContext.h"
 
 #include "slaythespire.h"
 
@@ -31,6 +33,141 @@ namespace sts {
         }
 
         return idx;
+    }
+
+    std::array<int, 20> NNInterface::convertNeowOptionToGenericChoice(const Neow::Option& option) const {
+        std::array<int, 20> features{};
+        
+        // Choice type flags (8 features)
+        bool isCardReward = false;
+        bool isRelicReward = false;
+        bool isGoldReward = false;
+        bool isHpChange = false;
+        bool isCardUpgrade = false;
+        bool isCardRemoval = false;
+        bool isCardTransform = false;
+        bool isShopAction = false;
+        
+        // Binary flags (2 features)
+        bool isCurse = false;
+        bool isUpgrade = false;
+        
+        // ID fields (2 features)
+        int cardId = 0;
+        int relicId = 0;
+        
+        // Reward amounts (5 features, normalized)
+        float goldAmount = 0.0f;
+        float hpChangeAmount = 0.0f;
+        float maxHpChangeAmount = 0.0f;
+        float goldCost = 0.0f;
+        float hpCost = 0.0f;
+        
+        // Analyze bonus
+        switch (option.r) {
+            case Neow::Bonus::THREE_CARDS:
+            case Neow::Bonus::ONE_RANDOM_RARE_CARD:
+            case Neow::Bonus::THREE_RARE_CARDS:
+            case Neow::Bonus::RANDOM_COLORLESS:
+            case Neow::Bonus::RANDOM_COLORLESS_2:
+                isCardReward = true;
+                break;
+                
+            case Neow::Bonus::RANDOM_COMMON_RELIC:
+            case Neow::Bonus::ONE_RARE_RELIC:
+            case Neow::Bonus::BOSS_RELIC:
+                isRelicReward = true;
+                break;
+                
+            case Neow::Bonus::HUNDRED_GOLD:
+                isGoldReward = true;
+                goldAmount = 100.0f / 1000.0f; // Normalize by 1000
+                break;
+                
+            case Neow::Bonus::TWO_FIFTY_GOLD:
+                isGoldReward = true;
+                goldAmount = 250.0f / 1000.0f; // Normalize by 1000
+                break;
+                
+            case Neow::Bonus::TEN_PERCENT_HP_BONUS:
+                isHpChange = true;
+                maxHpChangeAmount = 0.1f; // 10% as fraction
+                break;
+                
+            case Neow::Bonus::TWENTY_PERCENT_HP_BONUS:
+                isHpChange = true;
+                maxHpChangeAmount = 0.2f; // 20% as fraction
+                break;
+                
+            case Neow::Bonus::UPGRADE_CARD:
+                isCardUpgrade = true;
+                break;
+                
+            case Neow::Bonus::REMOVE_CARD:
+            case Neow::Bonus::REMOVE_TWO:
+                isCardRemoval = true;
+                break;
+                
+            case Neow::Bonus::TRANSFORM_CARD:
+            case Neow::Bonus::TRANSFORM_TWO_CARDS:
+                isCardTransform = true;
+                break;
+                
+            default:
+                break;
+        }
+        
+        // Analyze drawback
+        switch (option.d) {
+            case Neow::Drawback::TEN_PERCENT_HP_LOSS:
+                isHpChange = true;
+                maxHpChangeAmount -= 0.1f; // Subtract 10%
+                break;
+                
+            case Neow::Drawback::NO_GOLD:
+                hpCost = 1.0f; // Conceptually costly
+                break;
+                
+            case Neow::Drawback::CURSE:
+                isCurse = true;
+                break;
+                
+            case Neow::Drawback::PERCENT_DAMAGE:
+                isHpChange = true;
+                hpChangeAmount = -0.3f; // -30% HP damage
+                break;
+                
+            case Neow::Drawback::LOSE_STARTER_RELIC:
+                hpCost = 1.0f; // Conceptually costly
+                break;
+                
+            default:
+                break;
+        }
+        
+        // Pack features into array
+        features[0] = isCardReward ? 1 : 0;
+        features[1] = isRelicReward ? 1 : 0;
+        features[2] = isGoldReward ? 1 : 0;
+        features[3] = isHpChange ? 1 : 0;
+        features[4] = isCardUpgrade ? 1 : 0;
+        features[5] = isCardRemoval ? 1 : 0;
+        features[6] = isCardTransform ? 1 : 0;
+        features[7] = isShopAction ? 1 : 0;
+        features[8] = isCurse ? 1 : 0;
+        features[9] = isUpgrade ? 1 : 0;
+        features[10] = cardId;
+        features[11] = relicId;
+        features[12] = static_cast<int>(goldAmount * 1000); // Convert back to int
+        features[13] = static_cast<int>(hpChangeAmount * 100); // Scale to int
+        features[14] = static_cast<int>(maxHpChangeAmount * 100); // Scale to int
+        features[15] = static_cast<int>(goldCost);
+        features[16] = static_cast<int>(hpCost * 100); // Scale to int
+        features[17] = 0; // padding_1
+        features[18] = 0; // padding_2
+        features[19] = 0; // padding_3
+        
+        return features;
     }
 
     std::array<int,NNInterface::observation_space_size> NNInterface::getObservation(const GameContext &gc) const {
@@ -59,6 +196,24 @@ namespace sts {
         }
         offset += 178;
 
+        // Add current event as one-hot encoding (58 possible events)
+        int eventEncodeIdx = offset + static_cast<int>(gc.curEvent);
+        ret[eventEncodeIdx] = 1;
+        offset += 58;
+
+        // Add generic choice options (4 options * 20 features per option = 80 features)
+        for (int i = 0; i < 4; ++i) {
+            const auto& option = gc.info.neowRewards[i];
+            int choiceOffset = offset;
+            
+            // Convert Neow option to generic choice features (20 features per choice)
+            auto choiceFeatures = convertNeowOptionToGenericChoice(option);
+            for (int j = 0; j < 20; ++j) {
+                ret[choiceOffset + j] = choiceFeatures[j];
+            }
+            offset += 20;
+        }
+
         return ret;
     }
 
@@ -70,16 +225,50 @@ namespace sts {
         ret[1] = playerHpMax;
         ret[2] = playerGoldMax;
         ret[3] = 60;
-        spaceOffset += 3;
+        spaceOffset += 4;
 
-        std::fill(ret.begin()+spaceOffset, ret.end(), 1);
+        // Boss encoding (one-hot): max value 1
+        std::fill(ret.begin()+spaceOffset, ret.begin()+spaceOffset+10, 1);
         spaceOffset += 10;
 
-        std::fill(ret.begin()+spaceOffset, ret.end(), cardCountMax);
+        // Card counts: max value cardCountMax
+        std::fill(ret.begin()+spaceOffset, ret.begin()+spaceOffset+220, cardCountMax);
         spaceOffset += 220;
 
-        std::fill(ret.begin()+spaceOffset, ret.end(), 1);
+        // Relics (binary): max value 1
+        std::fill(ret.begin()+spaceOffset, ret.begin()+spaceOffset+178, 1);
         spaceOffset += 178;
+
+        // Events (one-hot): max value 1
+        std::fill(ret.begin()+spaceOffset, ret.begin()+spaceOffset+58, 1);
+        spaceOffset += 58;
+
+        // Generic choice options (4 options * 20 features): variable max values
+        for (int i = 0; i < 4; ++i) {
+            // Choice type flags (8 features): max value 1
+            std::fill(ret.begin()+spaceOffset, ret.begin()+spaceOffset+8, 1);
+            spaceOffset += 8;
+            
+            // Binary flags (2 features): max value 1  
+            std::fill(ret.begin()+spaceOffset, ret.begin()+spaceOffset+2, 1);
+            spaceOffset += 2;
+            
+            // ID fields (2 features): max card/relic IDs
+            ret[spaceOffset++] = 371; // Max card ID
+            ret[spaceOffset++] = 177; // Max relic ID
+            
+            // Reward amounts (5 features): normalized ranges
+            ret[spaceOffset++] = 250; // gold_amount (max 250)
+            ret[spaceOffset++] = 100; // hp_change_amount (±100)
+            ret[spaceOffset++] = 100; // max_hp_change_amount (±100)
+            ret[spaceOffset++] = 1000; // gold_cost (max 1000)
+            ret[spaceOffset++] = 100; // hp_cost (max 100)
+            
+            // Padding (3 features): unused
+            ret[spaceOffset++] = 0;
+            ret[spaceOffset++] = 0;
+            ret[spaceOffset++] = 0;
+        }
 
         return ret;
     }

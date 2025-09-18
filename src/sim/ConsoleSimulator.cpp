@@ -951,10 +951,6 @@ void ConsoleSimulator::printEventActions(std::ostream &os) const {
             break;
         }
 
-        case Event::NOTE_FOR_YOURSELF: // A Note For Yourself
-            os << "0: [Take and Give] Receive "<< gc->noteForYourselfCard.getName() <<". Store a card in your deck in return.\n";
-            os << "1: [Ignore] Nothing happens.\n";
-            break;
 
         case Event::PURIFIER:
             if (gc->deck.getTransformableCount(1) > 0) {

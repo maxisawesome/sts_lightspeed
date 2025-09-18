@@ -18,10 +18,10 @@
 
 #include "slaythespire.h"
 
-
 using namespace sts;
 
-PYBIND11_MODULE(slaythespire, m) {
+PYBIND11_MODULE(slaythespire, m)
+{
     m.doc() = "pybind11 example plugin"; // optional module docstring
     m.def("play", &sts::py::play, "play Slay the Spire Console");
     m.def("get_seed_str", &SeedHelper::getString, "gets the integral representation of seed string used in the game ui");
@@ -31,7 +31,8 @@ PYBIND11_MODULE(slaythespire, m) {
     pybind11::class_<NNInterface> nnInterface(m, "NNInterface");
     nnInterface.def("getObservation", &NNInterface::getObservation, "get observation array given a GameContext")
         .def("getObservationMaximums", &NNInterface::getObservationMaximums, "get the defined maximum values of the observation space")
-        .def_property_readonly("observation_space_size", []() { return NNInterface::observation_space_size; });
+        .def_property_readonly("observation_space_size", []()
+                               { return NNInterface::observation_space_size; });
 
     pybind11::class_<search::ScumSearchAgent2> agent(m, "Agent");
     agent.def(pybind11::init<>());
@@ -46,34 +47,26 @@ PYBIND11_MODULE(slaythespire, m) {
         .def("pick_reward_card", &sts::py::pickRewardCard, "choose to obtain the card at the specified index in the card reward list")
         .def("skip_reward_cards", &sts::py::skipRewardCards, "choose to skip the card reward (increases max_hp by 2 with singing bowl)")
         .def("get_card_reward", &sts::py::getCardReward, "return the current card reward list")
-        .def_property_readonly("encounter", [](const GameContext &gc) { return gc.info.encounter; })
-        .def_property_readonly("deck",
-               [](const GameContext &gc) { return std::vector(gc.deck.cards.begin(), gc.deck.cards.end());},
-               "returns a copy of the list of cards in the deck"
-        )
-        .def("obtain_card",
-             [](GameContext &gc, Card card) { gc.deck.obtain(gc, card); },
-             "add a card to the deck"
-        )
-        .def("remove_card",
-            [](GameContext &gc, int idx) {
+        .def_property_readonly("encounter", [](const GameContext &gc)
+                               { return gc.info.encounter; })
+        .def_property_readonly("deck", [](const GameContext &gc)
+                               { return std::vector(gc.deck.cards.begin(), gc.deck.cards.end()); }, "returns a copy of the list of cards in the deck")
+        .def("obtain_card", [](GameContext &gc, Card card)
+             { gc.deck.obtain(gc, card); }, "add a card to the deck")
+        .def("remove_card", [](GameContext &gc, int idx)
+             {
                 if (idx < 0 || idx >= gc.deck.size()) {
                     std::cerr << "invalid remove deck remove idx" << std::endl;
                     return;
                 }
-                gc.deck.remove(gc, idx);
-            },
-             "remove a card at a idx in the deck"
-        )
-        .def_property_readonly("relics",
-               [] (const GameContext &gc) { return std::vector(gc.relics.relics); },
-               "returns a copy of the list of relics"
-        )
-        .def("__repr__", [](const GameContext &gc) {
+                gc.deck.remove(gc, idx); }, "remove a card at a idx in the deck")
+        .def_property_readonly("relics", [](const GameContext &gc)
+                               { return std::vector(gc.relics.relics); }, "returns a copy of the list of relics")
+        .def("__repr__", [](const GameContext &gc)
+             {
             std::ostringstream oss;
             oss << "<" << gc << ">";
-            return oss.str();
-        }, "returns a string representation of the GameContext");
+            return oss.str(); }, "returns a string representation of the GameContext");
 
     gameContext.def_readwrite("outcome", &GameContext::outcome)
         .def_readwrite("act", &GameContext::act)
@@ -84,7 +77,7 @@ PYBIND11_MODULE(slaythespire, m) {
         .def_readwrite("cur_map_node_x", &GameContext::curMapNodeX)
         .def_readwrite("cur_map_node_y", &GameContext::curMapNodeY)
         .def_readwrite("cur_room", &GameContext::curRoom)
-//        .def_readwrite("cur_event", &GameContext::curEvent) // todo standardize event names
+        .def_readwrite("cur_event", &GameContext::curEvent) // todo standardize event names
         .def_readwrite("boss", &GameContext::boss)
 
         .def_readwrite("cur_hp", &GameContext::curHp)
@@ -110,17 +103,17 @@ PYBIND11_MODULE(slaythespire, m) {
         .def_readwrite("data", &RelicInstance::data);
 
     pybind11::class_<Map> map(m, "SpireMap");
-    map.def(pybind11::init<std::uint64_t, int,int,bool>());
+    map.def(pybind11::init<std::uint64_t, int, int, bool>());
     map.def("get_room_type", &sts::py::getRoomType);
     map.def("has_edge", &sts::py::hasEdge);
     map.def("get_nn_rep", &sts::py::getNNMapRepresentation);
-    map.def("__repr__", [](const Map &m) {
-        return m.toString(true);
-    });
+    map.def("__repr__", [](const Map &m)
+            { return m.toString(true); });
 
     pybind11::class_<Card> card(m, "Card");
     card.def(pybind11::init<CardId>())
-        .def("__repr__", [](const Card &c) {
+        .def("__repr__", [](const Card &c)
+             {
             std::string s("<slaythespire.Card ");
             s += c.getName();
             if (c.isUpgraded()) {
@@ -129,8 +122,7 @@ PYBIND11_MODULE(slaythespire, m) {
                     s += std::to_string(c.getUpgraded());
                 }
             }
-            return s += ">";
-        }, "returns a string representation of a Card")
+            return s += ">"; }, "returns a string representation of a Card")
         .def("upgrade", &Card::upgrade)
         .def_readwrite("misc", &Card::misc, "value internal to the simulator used for things like ritual dagger damage");
 
@@ -164,10 +156,10 @@ PYBIND11_MODULE(slaythespire, m) {
 
     pybind11::enum_<CharacterClass> characterClass(m, "CharacterClass");
     characterClass.value("IRONCLAD", CharacterClass::IRONCLAD)
-            .value("SILENT", CharacterClass::SILENT)
-            .value("DEFECT", CharacterClass::DEFECT)
-            .value("WATCHER", CharacterClass::WATCHER)
-            .value("INVALID", CharacterClass::INVALID);
+        .value("SILENT", CharacterClass::SILENT)
+        .value("DEFECT", CharacterClass::DEFECT)
+        .value("WATCHER", CharacterClass::WATCHER)
+        .value("INVALID", CharacterClass::INVALID);
 
     pybind11::enum_<Room> roomEnum(m, "Room");
     roomEnum.value("SHOP", Room::SHOP)
@@ -666,7 +658,7 @@ PYBIND11_MODULE(slaythespire, m) {
         .value("ECTOPLASM", RelicId::ECTOPLASM)
         .value("EMOTION_CHIP", RelicId::EMOTION_CHIP)
         .value("FROZEN_CORE", RelicId::FROZEN_CORE)
-        .value("FROZEN_EYE", RelicId::FROZEN_EYE)
+        // .value("FROZEN_EYE", RelicId::FROZEN_EYE)
         .value("GAMBLING_CHIP", RelicId::GAMBLING_CHIP)
         .value("GINGER", RelicId::GINGER)
         .value("GOLDEN_EYE", RelicId::GOLDEN_EYE)
@@ -836,5 +828,3 @@ PYBIND11_MODULE(slaythespire, m) {
 }
 
 // os.add_dll_directory("C:\\Program Files\\mingw-w64\\x86_64-8.1.0-posix-seh-rt_v6-rev0\\mingw64\\bin")
-
-

@@ -684,7 +684,6 @@ int search::GameAction::getValidEventSelectBits(const GameContext &gc) {
         case Event::HYPNOTIZING_COLORED_MUSHROOMS:
         case Event::MYSTERIOUS_SPHERE:
         case Event::THE_NEST:
-        case Event::NOTE_FOR_YOURSELF:
         case Event::SCRAP_OOZE:
         case Event::SECRET_PORTAL:
         case Event::SHINING_LIGHT:

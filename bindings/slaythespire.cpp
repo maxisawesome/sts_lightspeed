@@ -17,6 +17,8 @@
 #include "game/Game.h"
 
 #include "slaythespire.h"
+#include "sim/search/GameAction.h"
+#include "sim/search/Action.h"
 
 using namespace sts;
 
@@ -96,7 +98,23 @@ PYBIND11_MODULE(slaythespire, m)
 
         .def_readwrite("shop_remove_count", &GameContext::shopRemoveCount)
         .def_readwrite("speedrun_pace", &GameContext::speedrunPace)
-        .def_readwrite("note_for_yourself_card", &GameContext::noteForYourselfCard);
+        .def_readwrite("note_for_yourself_card", &GameContext::noteForYourselfCard)
+        .def("execute_action", [](GameContext &gc, int action_bits) {
+            search::GameAction action(static_cast<std::uint32_t>(action_bits));
+            if (action.isValidAction(gc)) {
+                action.execute(gc);
+                return true;
+            }
+            return false;
+        }, "Execute a game action using action bits. Returns True if action was valid and executed.")
+        .def("get_valid_actions", [](const GameContext &gc) -> std::vector<int> {
+            auto actions = search::GameAction::getAllActionsInState(gc);
+            std::vector<int> action_bits;
+            for (const auto& action : actions) {
+                action_bits.push_back(static_cast<int>(action.bits));
+            }
+            return action_bits;
+        }, "Get all valid action bits for the current game state");
 
     pybind11::class_<RelicInstance> relic(m, "Relic");
     relic.def_readwrite("id", &RelicInstance::id)
@@ -877,6 +895,48 @@ PYBIND11_MODULE(slaythespire, m)
         .value("CIRCLET", RelicId::CIRCLET)
         .value("RED_CIRCLET", RelicId::RED_CIRCLET)
         .value("INVALID", RelicId::INVALID);
+
+    // GameAction class for out-of-combat actions
+    pybind11::class_<search::GameAction> gameAction(m, "GameAction");
+    gameAction.def(pybind11::init<std::uint32_t>(), "Create GameAction from action bits")
+        .def(pybind11::init<int, int>(), "Create GameAction from indices")
+        .def("execute", &search::GameAction::execute, "Execute this action on a GameContext")
+        .def("is_valid", &search::GameAction::isValidAction, "Check if this action is valid for the given GameContext")
+        .def_readwrite("bits", &search::GameAction::bits, "The raw action bits")
+        .def("get_idx1", &search::GameAction::getIdx1, "Get first index parameter")
+        .def("get_idx2", &search::GameAction::getIdx2, "Get second index parameter")
+        .def("print_desc", [](const search::GameAction& action, const GameContext& gc) -> std::string {
+            std::ostringstream oss;
+            action.printDesc(oss, gc);
+            return oss.str();
+        }, "Get description of this action for the given GameContext");
+
+    // Static methods for GameAction
+    gameAction.def_static("get_all_actions", &search::GameAction::getAllActionsInState, "Get all valid actions for a GameContext");
+
+    // Action class for combat actions
+    pybind11::class_<search::Action> battleAction(m, "BattleAction");
+    battleAction.def(pybind11::init<std::uint32_t>(), "Create BattleAction from action bits")
+        .def(pybind11::init<search::ActionType>(), "Create BattleAction from ActionType")
+        .def(pybind11::init<search::ActionType, int>(), "Create BattleAction from ActionType and index")
+        .def(pybind11::init<search::ActionType, int, int>(), "Create BattleAction from ActionType and two indices")
+        .def_readwrite("bits", &search::Action::bits, "The raw action bits")
+        .def("get_action_type", &search::Action::getActionType, "Get the action type")
+        .def("get_source_idx", &search::Action::getSourceIdx, "Get source index (for card/potion actions)")
+        .def("get_target_idx", &search::Action::getTargetIdx, "Get target index (for card/potion actions)")
+        .def("print_desc", [](const search::Action& action, const BattleContext& bc) -> std::string {
+            std::ostringstream oss;
+            action.printDesc(oss, bc);
+            return oss.str();
+        }, "Get description of this action for the given BattleContext");
+
+    // ActionType enum for battle actions
+    pybind11::enum_<search::ActionType> actionType(m, "ActionType");
+    actionType.value("CARD", search::ActionType::CARD)
+        .value("POTION", search::ActionType::POTION)
+        .value("SINGLE_CARD_SELECT", search::ActionType::SINGLE_CARD_SELECT)
+        .value("MULTI_CARD_SELECT", search::ActionType::MULTI_CARD_SELECT)
+        .value("END_TURN", search::ActionType::END_TURN);
 
 #ifdef VERSION_INFO
     m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
